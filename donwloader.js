@@ -19,10 +19,15 @@ function Downloader(folder){
 
     this.downloadFile = function(file){
         return new Promise(function(resolve, reject){
-            var args = " -L -o :folder:filename :fileurl";
+            var args = " -L -o :path:filename :fileurl";
+            var filepath = download_folder + file.sharename + '/' + file.fileid;
+
+            !fs.existsSync(download_folder + file.sharename) && fs.mkdirSync(download_folder + file.sharename);
+            !fs.existsSync(filepath) && fs.mkdirSync(filepath);
+
             args = args
-                .replace(':folder', download_folder)
-                .replace(':filename', file.filename)
+                .replace(':path', filepath)
+                .replace(':filename', '/' + file.filename)
                 .replace(':fileurl', file.downloadurl);
 
             exec('curl ' + args, function (error, stdout, stderr) {
