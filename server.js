@@ -10,8 +10,7 @@ var Checker = require('./checker');
 
 var app = express();
 var api = new Api();
-var checker = new Checker();
-
+var checker = new Checker('./temp/');
 var donwloader = new Downloader('./temp/');
 
 app.use(bodyParser.json()); // for parsing application/json
@@ -37,7 +36,13 @@ app.post('/file/register', function (req, res) {
 });
 
 app.post('/check', function(req, res){
-    checker.run();
+    checker.run()
+        .then(function(report){
+            console.log(report);
+        })
+        .catch(function(e){
+            console.log(e.stack);
+        });
 });
 
 app.listen(8080, function () {

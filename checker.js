@@ -1,34 +1,53 @@
 /**
  * Created by rparaschak on 2/13/16.
  */
-
+var spawn = require('child_process').spawn;
 var Api = require('./api');
 
 var api = new Api();
 
-function Checker() {
+function Checker(folder) {
+
+    var _scan_folder = folder;
+
+
 
     this.run = function () {
-        return api.getFilesToCheck()
-            .then(function (files) {
-                console.log(files);
+        var scanPromise = scan();
+        var filesPromise = api.getFilesToCheck();
+
+        return Promise.all([scanPromise, filesPromise])
+            .then(function(promise){
+                var scan = promise[0];
+                var files = promise[1];
+                console.log(scan, files);
             })
-            .catch(function(e){
+            .catch(function (e) {
                 console.log(e.stack);
             });
-    }
+    };
 
-    function scanFile(filename) {
+    var scan = function() {
         return new Promise(function (resolve, reject) {
-            exec('clamscan ' + filename, function (error, stdout, stderr) {
-                if (error !== null)
-                    return reject(error);
-                parseCalmavScanReport(stdout);
+            var clam = spawn('clamscan', [_scan_folder, '-r', '--no-summary', '--infected']);
+            var data = '';
+            var err = '';
+
+            clam.stdout.on('data', function (out) {
+                data += out;
+            });
+
+            clam.stderr.on('data', function (out) {
+                err += out;
+            });
+
+            clam.on('close', function (code) {
+                if (err)
+                    return reject(err);
+                resolve(data);
             });
         });
     }
-
 }
 
 module.exports = Checker;
-
