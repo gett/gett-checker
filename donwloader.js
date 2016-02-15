@@ -11,7 +11,7 @@ var known_archives = [
     'zip',
     '7z', // p7zip-full
     'rar',
-    'cpgz',
+    //'cpgz',
     'tgz'
 ];
 
@@ -39,9 +39,9 @@ function Downloader(folder){
                 }
 
                 file.path = download_folder + file.filename;
-
                 if(!isArchive(file))
                     return resolve(file);
+                unpack(file);
                 //Unpacking archive
                 //Skip archives with password
                 resolve(file);
@@ -53,7 +53,7 @@ function Downloader(folder){
         });
     };
 
-    var unpack = function(file){
+    var unpack = function (file){
         var filepath = download_folder + file.sharename + '/' + file.fileid;
         var dest_dir = file.filename;
         dest_dir = dest_dir.split('.');
@@ -66,20 +66,21 @@ function Downloader(folder){
             case 'tar':
             case 'tar.gz':
             case 'tgz':
-                execQuery = 'tar -xf ' + filepath + '/' + file.filename + ' -C ' + dest_dir; // tar -xf *.tar.gz -C temp/sharename/fileid/archName
+                execQuery = 'tar -xf ' + filepath + '/' + file.filename + ' -C ' + dest_dir; // tar -xf targz.tar.gz -C temp/sharename/fileid/archName
                 break;
             case 'zip':
-                execQuery = 'unzip -o ' + filepath + '/' + file.filename + ' -d ' + dest_dir; // unzip -o zip.zip -d temp/zip.zip
+                execQuery = 'unzip -o ' + filepath + '/' + file.filename + ' -d ' + dest_dir; // unzip -o zip.zip -d temp/sharename/fileid/archName
                 break;
             case '7z':
-                execQuery = '7z x ' + filepath + '/' + file.filename + ' -y -o' + dest_dir; // 7z x 7z.7z -y -otemp/7z.7z
+                execQuery = '7z x ' + filepath + '/' + file.filename + ' -y -o' + dest_dir; // 7z x 7z.7z -y -otemp/sharename/fileid/archName
                 break;
             case 'rar':
-                execQuery = 'unrar x ' + filepath + '/' + file.filename + ' ' + dest_dir; // unrar x rar.rar temp/rar.rar
+                execQuery = 'unrar x ' + filepath + '/' + file.filename + ' ' + dest_dir; // unrar x rar.rar temp/sharename/fileid/archName
                 break;
         }
         exec(execQuery, function(err, stdout, stderr) {
-            console.log(err, stdout, stderr);
+            if(err !== null)
+                console.log(err, stderr);
         });
     };
 
