@@ -77,4 +77,4 @@ setInterval(function(){
         .catch(function(e){
             console.log(e.stack);
         });
-},5 * 60 * 1000);
+},3 * 60 * 1000);
