@@ -3,11 +3,18 @@
  */
 
 var _ = require('underscore');
+var request = require('request');
 var MongoClient = require('mongodb').MongoClient
     , assert = require('assert');
 
+var gett_api;
+
+if(process.env.NODE_ENV == 'production')
+    gett_api = 'http://api.ge.tt';
+else
+    gett_api = 'http://local.ge.tt:10000';
+
 var url = 'mongodb://localhost:27017/analyzer';
-var gett_api = 'http://api.ge.tt';
 var mongo;
 var File;
 
@@ -62,17 +69,19 @@ function Api(){
                 files && resolve(files);
             });
         });
-    }
+    };
 
     this.reportMalware = function(malware){
         return new Promise(function(resolve, reject){
             if(!malware.length)
                 return resolve([]);
+            request.post({url: gett_api + '/violation/malware/report', formData: {malware: JSON.stringify(malware)}});
             resolve(malware);
             //api request here
+        }).catch(function(e){
+            console.log(e.stack);
         });
     }
-
 }
 
 module.exports = Api;

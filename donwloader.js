@@ -6,21 +6,21 @@ var exec = require('child_process').exec;
 var fs = require('fs');
 
 var known_archives = [
-    'tar.gz', // should be before tar
-    'tar',
-    'zip',
-    '7z', // p7zip-full
-    'rar',
+    '.tar.gz', // should be before tar
+    '.tar',
+    '.zip',
+    '.7z', // p7zip-full
+    '.rar',
     //'cpgz',
-    'tgz'
+    '.tgz'
 ];
 
-function Downloader(folder){
+function Downloader(folder) {
 
     var download_folder = folder;
-    var archiveType = undefined;
-    this.downloadFile = function(file){
-        return new Promise(function(resolve, reject){
+    var archiveType;
+    this.downloadFile = function (file) {
+        return new Promise(function (resolve, reject) {
             var args = " -L -o :path:filename :fileurl";
             var filepath = download_folder + file.sharename + '/' + file.fileid;
 
@@ -33,17 +33,19 @@ function Downloader(folder){
                 .replace(':fileurl', file.downloadurl);
 
             exec('curl ' + args, function (error, stdout, stderr) {
-                if (error !== null){
-                    console.log(error, stderr);
+                if (error !== null) {
                     return reject(error, stderr);
                 }
+                console.log(error, stderr);
 
                 file.path = download_folder + file.filename;
-                if(!isArchive(file))
+                if (!isArchive(file))
                     return resolve(file);
-                unpack(file).then(function(file) {
-                    return resolve(file);
-                }).catch(function(stderr) {
+                console.log('Archive!!!');
+                console.log(isArchive(file));
+                unpack(file).then(function (file) {
+                    resolve(file);
+                }).catch(function (stderr) {
                     return reject(stderr);
                 });
                 //Unpacking archive
@@ -56,8 +58,8 @@ function Downloader(folder){
         });
     };
 
-    var unpack = function (file){
-        return new Promise(function(resolve, reject) {
+    var unpack = function (file) {
+        return new Promise(function (resolve, reject) {
             var filepath = download_folder + file.sharename + '/' + file.fileid;
             var dest_dir = file.filename;
             dest_dir = dest_dir.split('.');
@@ -66,7 +68,7 @@ function Downloader(folder){
             dest_dir = filepath + '/' + dest_dir;
             !fs.existsSync(dest_dir) && fs.mkdirSync(dest_dir);
             var execQuery = '';
-            switch(archiveType) {
+            switch (archiveType) {
                 case 'tar.gz':
                     var unpackedTar = file.filename.split('.');
                     unpackedTar.pop();
@@ -92,23 +94,23 @@ function Downloader(folder){
                     // query example: unrar x ./temp/12/0/rar.rar ./temp/12/0/rar
                     break;
             }
-            exec(execQuery, function(err, stdout, stderr) {
-                if(err !== null)
+            exec(execQuery, function (err, stdout, stderr) {
+                if (err !== null)
                     return reject(stderr);
                 return resolve(file);
             });
         });
     };
 
-    var isArchive = function(file){
+    var isArchive = function (file) {
         var isArchive = false;
-        known_archives.every(function(type){
+        known_archives.every(function (type) {
             isArchive = file.filename.indexOf(type, this.length - type.length) !== -1;
-            if(isArchive)
+            if (isArchive)
                 archiveType = type;
             return !isArchive;
         });
-        return isArchive;
+        return archiveType || false;
     };
 
 }
