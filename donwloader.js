@@ -41,8 +41,6 @@ function Downloader(folder) {
                 file.path = download_folder + file.filename;
                 if (!isArchive(file))
                     return resolve(file);
-                console.log('Archive!!!');
-                console.log(isArchive(file));
                 unpack(file).then(function (file) {
                     resolve(file);
                 }).catch(function (stderr) {
