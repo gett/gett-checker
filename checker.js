@@ -3,6 +3,8 @@
  */
 var spawn = require('child_process').spawn;
 var Api = require('./api');
+var fs = require('fs');
+var exec = require('child_process').exec;
 
 var api = new Api();
 
@@ -10,21 +12,46 @@ function Checker(folder) {
 
     var _scan_folder = folder;
 
-
-
     this.run = function () {
         var scanPromise = scan();
         var filesPromise = api.getFilesToCheck();
 
         return Promise.all([scanPromise, filesPromise])
             .then(function(promise){
-                var scan = promise[0];
+                var scanReport = promise[0];
                 var files = promise[1];
-                console.log(scan, files);
+                var malware = [];
+                files.forEach(function(file){
+                    if(scanReport.indexOf(file.sharename + '/' + file.fileid) > -1)
+                        malware.push(file);
+                });
+                return {
+                    malware: malware,
+                    checked: files
+                };
             })
             .catch(function (e) {
                 console.log(e.stack);
             });
+    };
+
+    this.cleanChecked = function(files){
+        if(!files.length)
+            return new Promise(function(){});
+            var promises = [];
+            files.forEach(function(file){
+                promises.push(removeDir(_scan_folder + file.sharename + '/' + file.fileid));
+            });
+        return Promise.all(promises);
+    };
+
+    var removeDir = function(dir){
+        return new Promise(function(resolve, reject){
+            exec( 'rm -rf ' + dir, function ( err, stdout, stderr ){
+                stdout && resolve(stdout);
+                err && reject(stderr);
+            });
+        });
     };
 
     var scan = function() {
