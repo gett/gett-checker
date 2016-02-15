@@ -10,7 +10,7 @@ var _ = require('underscore');
 
 var temp_files;
 if(process.env.NODE_ENV == 'production')
-    temp_files = '/tmp/';
+    temp_files = '/tmp/gett-checker/';
 else
     temp_files = './temp/';
 
