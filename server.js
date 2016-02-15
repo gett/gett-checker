@@ -6,6 +6,7 @@ var bodyParser = require('body-parser');
 var Api = require('./api');
 var Downloader = require('./donwloader');
 var Checker = require('./checker');
+var _ = require('underscore');
 
 
 var app = express();
@@ -37,8 +38,14 @@ app.post('/file/register', function (req, res) {
 
 app.post('/check', function(req, res){
     checker.run()
-        .then(function(report){
-            console.log(report);
+        .then(function(results){
+            var markPromise = api.markAsChecked(results.checked);
+            var reportPromise = api.reportMalware(results.malware);
+            var deletePromise = checker.cleanChecked(results.checked);
+            return Promise.all([markPromise, reportPromise, deletePromise]);
+        })
+        .then(function(promises){
+            console.log(promises);
         })
         .catch(function(e){
             console.log(e.stack);
@@ -48,3 +55,14 @@ app.post('/check', function(req, res){
 app.listen(8080, function () {
 
 });
+
+//Run checker every minute
+/*setInterval(function(){
+    checker.run()
+        .then(function(malware){
+            console.log(malware);
+        })
+        .catch(function(e){
+            console.log(e.stack);
+        });
+}, 60 * 1000);*/

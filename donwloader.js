@@ -33,9 +33,10 @@ function Downloader(folder){
                 .replace(':fileurl', file.downloadurl);
 
             exec('curl ' + args, function (error, stdout, stderr) {
-                console.log(error, stdout, stderr);
-                if (error !== null)
+                if (error !== null){
+                    console.log(error, stderr);
                     return reject(error, stderr);
+                }
 
                 file.path = download_folder + file.filename;
 

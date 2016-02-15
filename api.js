@@ -2,10 +2,12 @@
  * Created by rparaschak on 2/14/16.
  */
 
+var _ = require('underscore');
 var MongoClient = require('mongodb').MongoClient
     , assert = require('assert');
 
 var url = 'mongodb://localhost:27017/analyzer';
+var gett_api = 'http://api.ge.tt';
 var mongo;
 var File;
 
@@ -47,6 +49,27 @@ function Api(){
                     return reject(err);
                 resolve(files);
             });
+        });
+    }
+
+    this.markAsChecked = function(files){
+        return new Promise(function(resolve, reject){
+            if(!files.length)
+                resolve([]);
+            var files_id = _.pluck(files, '_id');
+            File.update({_id: {$in: files_id}}, {$set: {state: 'checked'}}, {multi: true}, function(err, files){
+                err && reject(err);
+                files && resolve(files);
+            });
+        });
+    }
+
+    this.reportMalware = function(malware){
+        return new Promise(function(resolve, reject){
+            if(!malware.length)
+                return resolve([]);
+            resolve(malware);
+            //api request here
         });
     }
 
