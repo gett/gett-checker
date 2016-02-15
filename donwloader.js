@@ -69,27 +69,27 @@ function Downloader(folder) {
             !fs.existsSync(dest_dir) && fs.mkdirSync(dest_dir);
             var execQuery = '';
             switch (archiveType) {
-                case 'tar.gz':
+                case '.tar.gz':
                     var unpackedTar = file.filename.split('.');
                     unpackedTar.pop();
                     unpackedTar = unpackedTar.join('.');
                     execQuery = 'gzip -d ' + filepath + '/' + file.filename + ' && tar -xf ' + filepath + '/' + unpackedTar + ' -C ' + dest_dir;
                     // query example: gzip -d ./temp/8/0/targz.tar.gz && tar -xf ./temp/8/0/targz.tar -C ./temp/8/0/targztar
                     break;
-                case 'tar':
-                case 'tgz':
+                case '.tar':
+                case '.tgz':
                     execQuery = 'tar -xf ' + filepath + '/' + file.filename + ' -C ' + dest_dir;
                     // query example: tar -xf ./temp/9/0/tgz.tgz -C ./temp/9/0/tgz
                     break;
-                case 'zip':
+                case '.zip':
                     execQuery = 'unzip -o ' + filepath + '/' + file.filename + ' -d ' + dest_dir;
                     // query example: unzip -o ./temp/10/0/zip.zip -d ./temp/10/0/zip
                     break;
-                case '7z':
+                case '.7z':
                     execQuery = '7z x ' + filepath + '/' + file.filename + ' -y -o' + dest_dir;
                     // query example: 7z x ./temp/11/0/7z.7z -y -o./temp/11/0/7z
                     break;
-                case 'rar':
+                case '.rar':
                     execQuery = 'unrar x ' + filepath + '/' + file.filename + ' ' + dest_dir;
                     // query example: unrar x ./temp/12/0/rar.rar ./temp/12/0/rar
                     break;
