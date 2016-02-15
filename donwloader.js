@@ -29,7 +29,7 @@ function Downloader(folder) {
 
             args = args
                 .replace(':path', filepath)
-                .replace(':filename', '/' + file.filename)
+                .replace(':filename', '/' + encodeURIComponent(file.filename))
                 .replace(':fileurl', file.downloadurl);
 
             exec('curl ' + args, function (error, stdout, stderr) {
@@ -61,7 +61,7 @@ function Downloader(folder) {
     var unpack = function (file) {
         return new Promise(function (resolve, reject) {
             var filepath = download_folder + file.sharename + '/' + file.fileid;
-            var dest_dir = file.filename;
+            var dest_dir = encodeURIComponent(file.filename);
             dest_dir = dest_dir.split('.');
             dest_dir.pop();
             dest_dir = dest_dir.join('');
