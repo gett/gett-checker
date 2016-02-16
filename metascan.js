@@ -44,7 +44,6 @@ function Metascan(folder) {
     var file_md5 = function (path) {
         return new Promise(function (resolve, reject) {
             md5File(path, function (err, sum) {
-                console.log('File md5: ' + sum);
                 err && reject(err);
                 sum && resolve(sum);
             });

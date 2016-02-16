@@ -41,6 +41,7 @@ app.post('/file/register', function (req, res) {
         .then(function (file) {//Meta scan
             if (!donwloader.isArchive(file) && (file.filename.indexOf('.exe') == -1))
                 return;
+            console.log('Using Metascan: ');
             metascan.scanFile(file.sharename + '/' + file.fileid + '/' + encodeURIComponent(file.filename))
                 .then(function (infected) {
                     if (!infected)
