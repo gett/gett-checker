@@ -69,15 +69,21 @@ app.post('/file/register', function (req, res) {
 });
 
 app.get('/check', function (req, res) {
-    metascan.scanFile('aba/Virus.DOS.1_COM')
-        .then(function (scan_res) {
-            console.log(scan_res);
-            res.status(200).send(scan_res);
-        })
-        .catch(function (err) {
-            res.status(500).json(JSON.parse(err));
-        });
+    var filesPromise = api.getFilesToCheck();
 
+    checker.run(filesPromise)
+        .then(function (results) {
+            var markPromise = api.markAsChecked(results.checked);
+            var reportPromise = api.reportMalware(results.malware);
+            var deletePromise = checker.cleanChecked(results.checked);
+            return Promise.all([markPromise, reportPromise, deletePromise]);
+        })
+        .then(function (promises) {
+            console.log(promises);
+        })
+        .catch(function (e) {
+            console.log(e.stack);
+        });
 });
 
 app.listen(8080, function () {
