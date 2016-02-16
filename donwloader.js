@@ -93,8 +93,6 @@ function Downloader(folder) {
                     break;
             }
             exec(execQuery, function (err, stdout, stderr) {
-                if (err !== null)
-                    return reject(stderr);
                 return resolve(file);
             });
         });
