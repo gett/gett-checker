@@ -22,7 +22,7 @@ function Downloader(folder) {
     var archiveType;
     this.downloadFile = function (file) {
         return new Promise(function (resolve, reject) {
-            var args = " -L -o :path:filename :fileurl";
+            var args = " -L -o ':path:filename' :fileurl";
             var filepath = download_folder + file.sharename + '/' + file.fileid;
 
             !fs.existsSync(download_folder + file.sharename) && fs.mkdirSync(download_folder + file.sharename);
