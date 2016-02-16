@@ -17,6 +17,7 @@ var known_archives = [
 
 function Downloader(folder) {
 
+    var self = this;
     var download_folder = folder;
     var archiveType;
     this.downloadFile = function (file) {
@@ -32,14 +33,14 @@ function Downloader(folder) {
                 .replace(':filename', '/' + encodeURIComponent(file.filename))
                 .replace(':fileurl', file.downloadurl);
 
-            exec('curl ' + args, function (error, stdout, stderr) {
+            exec('curl ' + args, function (error, stderr, stdout) {
                 if (error !== null) {
                     return reject(error, stderr);
                 }
-                console.log(error, stderr);
+                console.log(stdout);
 
                 file.path = download_folder + file.filename;
-                if (!isArchive(file))
+                if (!self.isArchive(file))
                     return resolve(file);
                 unpack(file).then(function (file) {
                     resolve(file);
@@ -100,7 +101,7 @@ function Downloader(folder) {
         });
     };
 
-    var isArchive = function (file) {
+    this.isArchive = function (file) {
         var isArchive = false;
         known_archives.every(function (type) {
             isArchive = file.filename.indexOf(type, this.length - type.length) !== -1;

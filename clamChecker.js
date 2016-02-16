@@ -12,9 +12,8 @@ function Checker(folder) {
 
     var _scan_folder = folder;
 
-    this.run = function () {
+    this.run = function (filesPromise) {
         var scanPromise = scan();
-        var filesPromise = api.getFilesToCheck();
 
         return Promise.all([scanPromise, filesPromise])
             .then(function(promise){
