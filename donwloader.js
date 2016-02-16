@@ -19,7 +19,6 @@ function Downloader(folder) {
 
     var self = this;
     var download_folder = folder;
-    var archiveType;
     this.downloadFile = function (file) {
         return new Promise(function (resolve, reject) {
             var args = " -L -o ':path:filename' :fileurl";
@@ -40,9 +39,13 @@ function Downloader(folder) {
                 console.log(stdout);
 
                 file.path = download_folder + file.filename;
+                console.log('Archive: ' + self.isArchive(file));
                 if (!self.isArchive(file))
-                    return file;
-                return unpack(file);
+                    return resolve(file);
+                return unpack(file)
+                    .then(function(){
+                        resolve(file);
+                    });
                 //Unpacking archive
                 //Skip archives with password
 
@@ -99,6 +102,7 @@ function Downloader(folder) {
 
     this.isArchive = function (file) {
         var isArchive = false;
+        var archiveType;
         known_archives.every(function (type) {
             isArchive = file.filename.indexOf(type, this.length - type.length) !== -1;
             if (isArchive)
