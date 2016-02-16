@@ -41,12 +41,8 @@ function Downloader(folder) {
 
                 file.path = download_folder + file.filename;
                 if (!self.isArchive(file))
-                    return resolve(file);
-                unpack(file).then(function (file) {
-                    resolve(file);
-                }).catch(function (stderr) {
-                    return reject(stderr);
-                });
+                    return file;
+                return unpack(file);
                 //Unpacking archive
                 //Skip archives with password
 
