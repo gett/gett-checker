@@ -42,13 +42,11 @@ function Downloader(folder) {
                 console.log('Archive: ' + self.isArchive(file));
                 if (!self.isArchive(file))
                     return resolve(file);
-                return unpack(file)
-                    .then(function(){
-                        resolve(file);
-                    });
-                //Unpacking archive
-                //Skip archives with password
+                unpack(file)
+                    .then(function () {
 
+                    });
+                resolve(file);//TODO: While unpack is not reliable
                 //Unpacking archives
 
 
