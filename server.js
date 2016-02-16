@@ -69,9 +69,9 @@ app.post('/file/register', function (req, res) {
 });
 
 app.get('/check', function (req, res) {
-    var filesPromise = api.getFilesToCheck();
+    var files = api.getFilesToCheck();
 
-    checker.run(filesPromise)
+    checker.run(files)
         .then(function (results) {
             var markPromise = api.markAsChecked(results.checked);
             var reportPromise = api.reportMalware(results.malware);
@@ -92,9 +92,9 @@ app.listen(8080, function () {
 
 //Run checker every X minutes
 setInterval(function () {
-    var filesPromise = api.getFilesToCheck();
+    var files = api.getFilesToCheck();
 
-    checker.run(filesPromise)
+    checker.run(files)
         .then(function (results) {
             var markPromise = api.markAsChecked(results.checked);
             var reportPromise = api.reportMalware(results.malware);

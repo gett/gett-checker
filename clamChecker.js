@@ -55,7 +55,7 @@ function Checker(folder) {
 
     var scan = function() {
         return new Promise(function (resolve, reject) {
-            var clam = spawn('clamscan', [_scan_folder, '-r', '--no-summary', '--infected']);
+            var clam = spawn('clamscan', [_scan_folder, '-r', /*'--no-summary', '--infected'*/]);
             var data = '';
             var err = '';
 
@@ -68,6 +68,7 @@ function Checker(folder) {
             });
 
             clam.on('close', function (code) {
+                console.log(err, data);
                 if (err)
                     return reject(err);
                 resolve(data);

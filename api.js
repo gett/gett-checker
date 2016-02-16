@@ -54,7 +54,7 @@ function Api(){
             File.find({state: 'ready'}).toArray(function(err, files){
                 if(err)
                     return reject(err);
-                resolve(files);
+                return resolve(files);
             });
         });
     }
