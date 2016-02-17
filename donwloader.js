@@ -42,11 +42,10 @@ function Downloader(folder) {
                 console.log('Archive: ' + self.isArchive(file));
                 if (!self.isArchive(file))
                     return resolve(file);
-                unpack(file)
+                unpack(file, self.isArchive(file))
                     .then(function () {
-
+                        resolve(file);
                     });
-                resolve(file);//TODO: While unpack is not reliable
                 //Unpacking archives
 
 
@@ -54,7 +53,7 @@ function Downloader(folder) {
         });
     };
 
-    var unpack = function (file) {
+    var unpack = function (file, archiveType) {
         return new Promise(function (resolve, reject) {
             var filepath = download_folder + file.sharename + '/' + file.fileid;
             var dest_dir = encodeURIComponent(file.filename);
