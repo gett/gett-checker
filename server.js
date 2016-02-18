@@ -28,7 +28,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.post('/file/register', function (req, res) {
     if (!req.body.downloadurl || !req.body.sharename || !req.body.fileid || !req.body.filename)
         return res.status(400).json({error: 'if(!req.body.downloadurl || !req.body.sharename || !req.body.fileid, !req.body.filename)'});
-
+    req.body.filename = req.body.filename.replace(/[^a-zA-Z0-9.]/g, '');
     api.registerFile(req.body)
         .then(function (file) {
             res.status(201).send();

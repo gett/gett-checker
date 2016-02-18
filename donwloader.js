@@ -56,7 +56,7 @@ function Downloader(folder) {
     var unpack = function (file, archiveType) {
         return new Promise(function (resolve, reject) {
             var filepath = download_folder + file.sharename + '/' + file.fileid;
-            var dest_dir = encodeURIComponent(file.filename);
+            var dest_dir = file.filename;
             dest_dir = dest_dir.split('.');
             dest_dir.pop();
             dest_dir = dest_dir.join('');
@@ -68,8 +68,8 @@ function Downloader(folder) {
                     var unpackedTar = file.filename.split('.');
                     unpackedTar.pop();
                     unpackedTar = unpackedTar.join('.');
-                    execQuery = 'gzip -d ' + filepath + '/' + file.filename + ' && tar -xf ' + filepath + '/' + unpackedTar + ' -C ' + dest_dir;
-                    // query example: gzip -d ./temp/8/0/targz.tar.gz && tar -xf ./temp/8/0/targz.tar -C ./temp/8/0/targztar
+                    execQuery = 'gzip -kd ' + filepath + '/' + file.filename + ' && tar -xf ' + filepath + '/' + unpackedTar + ' -C ' + dest_dir;
+                    // query example: gzip -kd ./temp/8/0/targz.tar.gz && tar -xf ./temp/8/0/targz.tar -C ./temp/8/0/targztar
                     break;
                 case '.tar':
                 case '.tgz':
@@ -90,6 +90,8 @@ function Downloader(folder) {
                     break;
             }
             exec(execQuery, function (err, stdout, stderr) {
+                if(err)
+                    console.log(err, stderr);
                 return resolve(file);
             });
         });
