@@ -30,9 +30,15 @@ function Api(){
     this.registerFile = function(file){
         return new Promise(function(resolve, reject){
             file.state = 'received';
-            File.insert(file, function(err, file){
-                err && reject(err);
-                file && resolve(file);
+            File.find({sharename: file.sharename, fileid: file.fileid}, function(err, files){
+                if(err)
+                    return reject(err);
+                if(files.length)
+                    return reject({message: 'File exists in the system already'});
+                File.insert(file, function(err, file){
+                    err && reject(err);
+                    file && resolve(file);
+                });
             });
         });
     };
