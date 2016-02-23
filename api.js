@@ -30,7 +30,7 @@ function Api(){
     this.registerFile = function(file){
         return new Promise(function(resolve, reject){
             file.state = 'received';
-            File.find({sharename: file.sharename, fileid: file.fileid}, function(err, files){
+            File.find({sharename: file.sharename, fileid: file.fileid}).toArray(function(err, files){
                 if(err)
                     return reject(err);
                 if(files.length)
