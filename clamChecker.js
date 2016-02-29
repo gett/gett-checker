@@ -10,9 +10,15 @@ var api = new Api();
 
 function Checker(folder) {
 
+    var checking = false;
+
     var _scan_folder = folder;
 
     this.run = function (filesPromise) {
+
+        if(checking)
+            throw {message: 'Already in progress'};
+
         var scanPromise = scan();
 
         return Promise.all([scanPromise, filesPromise])
@@ -59,6 +65,8 @@ function Checker(folder) {
             var data = '';
             var err = '';
 
+            checking = true;
+
             clam.stdout.on('data', function (out) {
                 data += out;
             });
@@ -69,6 +77,7 @@ function Checker(folder) {
 
             clam.on('close', function (code) {
                 console.log(err, data);
+                checking = false;
                 if (err)
                     return reject(err);
                 resolve(data);
