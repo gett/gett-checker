@@ -15,15 +15,12 @@ function Checker(folder) {
     var _scan_folder = folder;
 
     this.run = function (filesPromise) {
-
-        if(checking)
-            throw {message: 'Already in progress'};
-
         var scanPromise = scan();
 
         return Promise.all([scanPromise, filesPromise])
             .then(function(promise){
                 var scanReport = promise[0];
+                console.log(scanReport);
                 var files = promise[1];
                 var malware = [];
                 files.forEach(function(file){
@@ -36,7 +33,7 @@ function Checker(folder) {
                 };
             })
             .catch(function (e) {
-                console.log(e.stack);
+                throw e;
             });
     };
 
@@ -61,6 +58,9 @@ function Checker(folder) {
 
     var scan = function() {
         return new Promise(function (resolve, reject) {
+            if(checking)
+                return reject('Already in progress.');
+
             var clam = spawn('clamscan', [_scan_folder, '-r', '--no-summary', '--infected']);
             var data = '';
             var err = '';

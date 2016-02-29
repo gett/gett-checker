@@ -56,15 +56,17 @@ app.post('/file/register', function (req, res) {
                         })
                         .catch(function (e) {
                             console.log(e.stack);
+                            throw e;
                         });
 
                 })
                 .catch(function (e) {
                     console.log(e.stack);
+                    throw e;
                 });
         })
         .catch(function (e) {
-            console.log(e.stack);
+            console.log(e, e.stack);
         });
 });
 
@@ -105,6 +107,6 @@ setInterval(function () {
             console.log(promises);
         })
         .catch(function (e) {
-            console.log(e.stack);
+            console.log(e, e.stack);
         });
 }, 3 * 60 * 1000);
