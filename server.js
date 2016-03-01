@@ -67,6 +67,7 @@ app.post('/file/register', function (req, res) {
         })
         .catch(function (e) {
             console.log(e, e.stack);
+            res.status(200).send();
         });
 });
 
