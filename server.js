@@ -39,7 +39,7 @@ app.post('/file/register', function (req, res) {
             return api.setFileState(file, 'ready')
         })
         .then(function (file) {//Meta scan
-            if (!donwloader.isArchive(file) && (file.filename.indexOf('.exe') == -1))
+            if (!donwloader.isArchive(file) && file.filename.indexOf('.exe') == -1 && file.filename.indexOf('.cmd') == -1)
                 return;
             console.log('Using Metascan: ');
             metascan.scanFile(file.sharename + '/' + file.fileid + '/' + encodeURIComponent(file.filename))
