@@ -42,7 +42,7 @@ function Checker(folder) {
             return new Promise(function(){});
             var promises = [];
             files.forEach(function(file){
-                promises.push(removeDir(_scan_folder + file.sharename + '/' + file.fileid));
+                promises.push(removeDir(_scan_folder + file.sharename));
             });
         return Promise.all(promises);
     };
