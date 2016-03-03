@@ -40,12 +40,10 @@ function Downloader(folder) {
 
                 file.path = download_folder + file.filename;
                 console.log('Archive: ' + self.isArchive(file));
-                if (!self.isArchive(file))
-                    return resolve(file);
-                unpack(file, self.isArchive(file))
-                    .then(function () {
-                        resolve(file);
-                    });
+                if (self.isArchive(file))
+                    unpack(file, self.isArchive(file))
+                        .then(function (){});
+                resolve(file);
                 //Unpacking archives
 
 
@@ -90,7 +88,7 @@ function Downloader(folder) {
                     break;
             }
             exec(execQuery, function (err, stdout, stderr) {
-                if(err)
+                if (err)
                     console.log(err, stderr);
                 return resolve(file);
             });
