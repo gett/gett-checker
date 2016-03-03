@@ -110,4 +110,4 @@ setInterval(function () {
         .catch(function (e) {
             console.log(e, e.stack);
         });
-}, 3 * 60 * 1000);
+}, 60 * 1000);
