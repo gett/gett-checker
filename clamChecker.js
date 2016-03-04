@@ -50,6 +50,7 @@ function Checker(folder) {
     var removeDir = function(dir){
         return new Promise(function(resolve, reject){
             exec( 'rm -rf ' + dir, function ( err, stdout, stderr ){
+                console.log("Remove: ", err, stdout, stderr);
                 stdout && resolve(stdout);
                 err && reject(stderr);
             });
