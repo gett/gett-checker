@@ -36,8 +36,7 @@ function Downloader(folder) {
                 if (error !== null) {
                     return reject(error, stderr);
                 }
-                console.log(stdout);
-
+                console.log('File ' + file.filename + 'has been donwloaded.');
                 file.path = download_folder + file.filename;
                 console.log('Archive: ' + self.isArchive(file));
                 if (self.isArchive(file))

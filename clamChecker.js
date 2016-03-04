@@ -17,20 +17,19 @@ function Checker(folder) {
     this.run = function (filesPromise) {
         var scanPromise = scan();
 
-        return Promise.all([scanPromise, filesPromise])
-            .then(function(promise){
-                var scanReport = promise[0];
-                console.log(scanReport);
-                var files = promise[1];
+        return scanPromise
+            .then(function(scanReport){
                 var malware = [];
-                files.forEach(function(file){
-                    if(scanReport.indexOf(file.sharename + '/' + file.fileid) > -1)
-                        malware.push(file);
+                return filesPromise.then(function(files){
+                    files.forEach(function(file){
+                        if(scanReport.indexOf(file.sharename + '/' + file.fileid) > -1)
+                            malware.push(file);
+                    });
+                    return {
+                        malware: malware,
+                        checked: files
+                    };
                 });
-                return {
-                    malware: malware,
-                    checked: files
-                };
             })
             .catch(function (e) {
                 throw e;
@@ -50,7 +49,6 @@ function Checker(folder) {
     var removeDir = function(dir){
         return new Promise(function(resolve, reject){
             exec( 'rm -rf ' + dir, function ( err, stdout, stderr ){
-                console.log("Remove: ", err, stdout, stderr);
                 stdout && resolve(stdout);
                 err && reject(stderr);
             });

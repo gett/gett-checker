@@ -41,12 +41,14 @@ app.post('/file/register', function (req, res) {
         .then(function (file) {//Meta scan
             if (!donwloader.isArchive(file) && file.filename.indexOf('.exe') == -1 && file.filename.indexOf('.cmd') == -1)
                 return;
-            console.log('Using Metascan: ');
             metascan.scanFile(file.sharename + '/' + file.fileid + '/' + encodeURIComponent(file.filename))
                 .then(function (infected) {
-                    if (!infected)
+                    if (!infected){
+                        console.log('Metachecker says YES to ' + file.sharename);
                         return;
-                    console.log('Metachecker says no to file ' + file.filename);
+                    }
+
+                    console.log('Metachecker says NO to ' + file.sharename);
                     var markPromise = api.markAsChecked([file]);
                     var reportPromise = api.reportMalware([file]);
                     var deletePromise = checker.cleanChecked([file]);
