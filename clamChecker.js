@@ -32,6 +32,7 @@ function Checker(folder) {
                 });
             })
             .catch(function (e) {
+                console.log('Rejection in scan(): ', e);
                 throw e;
             });
     };

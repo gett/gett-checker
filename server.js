@@ -47,7 +47,6 @@ app.post('/file/register', function (req, res) {
                         console.log('Metachecker says YES to ' + file.sharename);
                         return;
                     }
-
                     console.log('Metachecker says NO to ' + file.sharename);
                     var markPromise = api.markAsChecked([file]);
                     var reportPromise = api.reportMalware([file]);
