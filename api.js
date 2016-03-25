@@ -4,6 +4,7 @@
 
 var _ = require('underscore');
 var request = require('request');
+var exec = require('child_process').exec;
 var MongoClient = require('mongodb').MongoClient
     , assert = require('assert');
 
@@ -53,7 +54,7 @@ function Api(){
             });
         });
 
-    }
+    };
 
     this.getFilesToCheck = function(){
         return new Promise(function(resolve, reject){
@@ -63,7 +64,7 @@ function Api(){
                 return resolve(files);
             });
         });
-    }
+    };
 
     this.markAsChecked = function(files){
         return new Promise(function(resolve, reject){
@@ -87,7 +88,18 @@ function Api(){
         }).catch(function(e){
             console.log(e.stack);
         });
-    }
+    };
+
+    this.cleanChecked = function(scanFolder, file) {
+        return new Promise(function(resolve, reject) {
+            var dir = scanFolder + file.sharename;
+            exec('rm -rf ' + dir, function ( err, stdout, stderr ) {
+                stdout && resolve(stdout);
+                err && reject(stderr);
+            });
+        });
+    };
+
 }
 
 module.exports = Api;

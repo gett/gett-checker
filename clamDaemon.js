@@ -20,48 +20,91 @@ module.exports = function(filesPath, port) {
     };
 
     function onData(out) {
-        itemsInQueue -= 1;
-        var parsedResponse = parseResponse(out);
-        if(parsedResponse)
-            updateFile(parsedResponse);
-        console.log(out, parsedResponse);
+        var parsedResponses = parseResponse(out, filesPath);
+        itemsInQueue -= parsedResponses.length;
+        if(parsedResponses.length) {
+            var updatePromises = [];
+            parsedResponses.forEach(function(parsedResponse) {
+                updatePromises.push(updateFile(parsedResponse));
+            });
+            Promise.all(updatePromises)
+                .then(function(files) {
+                    var cleanPromises = [];
+                    files.forEach(function(file) {
+                        cleanPromises.push(api.cleanChecked(filesPath, file));
+                    });
+                    Promise.all(cleanPromises)
+                        .then(function(removed) {
+                            //console.log(removed);
+                        })
+                        .catch(function(err) {
+                            console.error('ClamDaemon remove error: ', err);
+                        });
+                })
+                .catch(function(err) {
+                    console.error('ClamDaemon update error: ', err);
+                });
+        }
     }
 
-    function parseResponse(response) {
-        var checkerFolder = filesPath;
-        if(response.indexOf('COMMAND READ TIMED OUT') > -1 || response.indexOf('ERROR') > -1)
-            return {};
-        var sharename = {};
-        sharename.startPos = response.indexOf(checkerFolder) + checkerFolder.length;
-        sharename.endPos = response.indexOf('/', sharename.startPos);
-        sharename.name = response.substring(sharename.startPos, sharename.endPos);
+    function parseResponse(response, checkerFolder) {
+        var parsedResponses = [];
+        function singleParse(response) {
+            if((response.indexOf('COMMAND READ TIMED OUT') > -1 || response.indexOf('ERROR') > -1) && response.indexOf('OK') == -1 && response.indexOf('FOUND') == -1)
+                return {};
+            var sharename = {};
+            sharename.startPos = response.indexOf(checkerFolder) + checkerFolder.length;
+            sharename.endPos = response.indexOf('/', sharename.startPos);
+            sharename.name = response.substring(sharename.startPos, sharename.endPos);
 
-        var fileid = {};
-        fileid.startPos = sharename.endPos + 1;
-        if(response.indexOf('/', fileid.startPos) != -1)
-            fileid.endPos = response.indexOf('/', fileid.startPos);
-        else
-            fileid.endPos = response.indexOf(':', fileid.startPos);
-        fileid.id = response.substring(fileid.startPos, fileid.endPos);
+            var fileid = {};
+            fileid.startPos = sharename.endPos + 1;
+            var slashPos = response.indexOf('/', fileid.startPos) > -1 ? response.indexOf('/', fileid.startPos) : Infinity;
+            var colonPos = response.indexOf(':', fileid.startPos) > -1 ? response.indexOf(':', fileid.startPos) : Infinity;
+            if(slashPos < colonPos)
+                fileid.endPos = response.indexOf('/', slashPos);
+            if(colonPos < slashPos)
+                fileid.endPos = response.indexOf(':', colonPos);
+            fileid.id = response.substring(fileid.startPos, fileid.endPos);
 
-        var resultFile = {
-            sharename: sharename.name,
-            fileid: fileid.id
-        };
-        if(response.indexOf('OK') > -1)
-            resultFile.state = 'checked';
-        if(response.indexOf('FOUND') > -1)
-            resultFile.state = 'malware';
-        return resultFile;
+            var resultFile = {
+                sharename: sharename.name,
+                fileid: fileid.id
+            };
+            var okPos = response.indexOf('OK', fileid.endPos) > -1 ? response.indexOf('OK', fileid.endPos) : Infinity;
+            var foundPos = response.indexOf('FOUND', fileid.endPos) > -1 ? response.indexOf('FOUND', fileid.endPos) : Infinity;
+            if(okPos < foundPos)
+                resultFile.state = 'checked';
+            if(foundPos < okPos)
+                resultFile.state = 'malware';
+            parsedResponses.push(resultFile);
+            if(response.indexOf(checkerFolder, fileid.endPos) > -1) {
+                var newResp = response.substring(response.indexOf(checkerFolder, fileid.endPos));
+                singleParse(newResp);
+            }
+        }
+        singleParse(response);
+        return parsedResponses;
     }
 
     function updateFile(file) {
-        if(file.state == 'checked')
-            api.setFileState(file, file.state);
-        else {
-            api.setFileState(file, file.state);
-            api.reportMalware(file);
-        }
+        return new Promise(function(resolve, reject) {
+            api.setFileState(file, file.state)
+                .then(function(file) {
+                    if(file.state == 'malware')
+                        return api.reportMalware(file)
+                            .then(function(file) {
+                                resolve(file);
+                            })
+                            .catch(function(err) {
+                                reject(err);
+                            });
+                    resolve(file);
+                })
+                .catch(function(err) {
+                    reject(err);
+                });
+        });
     }
 
     function pull() {
@@ -91,13 +134,13 @@ module.exports = function(filesPath, port) {
         });
 
         client.on('error', function(error) {
-            console.error('error: ', error);
+            console.error('ClamDaemon error: ', error);
         });
 
         client.on('data', onData);
     }
 
-    function reconnect(port){
+    function reconnect(port) {
         console.log('Reconnecting to ClamDaemon');
         init(port);
     }

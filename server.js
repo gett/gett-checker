@@ -46,20 +46,20 @@ app.post('/file/register', function (req, res) {
             return api.setFileState(file, 'ready')
         })
         .then(function (file) {//Meta scan
-            return clamDaemon.scanDir(file); // TODO: 'return' for test purposes, calling 'scanDir' without 'return' causing 'Error: Parse Error'
             if (!donwloader.isArchive(file) && file.filename.indexOf('.exe') == -1 && file.filename.indexOf('.cmd') == -1)
-                return;
+                return clamDaemon.scanDir(file);
             metascan.scanFile(file.sharename + '/' + file.fileid + '/' + encodeURIComponent(file.filename))
                 .then(function (infected) {
                     if (!infected){
                         console.log('Metachecker says YES to ' + file.sharename);
-                        return;
+                        return clamDaemon.scanDir(file);
                     }
                     console.log('Metachecker says NO to ' + file.sharename);
-                    var markPromise = api.markAsChecked([file]);
-                    var reportPromise = api.reportMalware([file]);
-                    var deletePromise = checker.cleanChecked([file]);
-                    return Promise.all([markPromise, reportPromise, deletePromise])
+                    var markPromise = api.setFileState(file, 'malware');
+                    //var deletePromise = api.cleanChecked(temp_files, file); // TODO: causing 'Error: ENOENT, open' at Error (native)
+                    //var reportPromise = api.reportMalware([file]); // TODO: causing 'Error: Parse Error'
+                    //var deletePromise = checker.cleanChecked([file]); // TODO: causing 'Error: ENOENT, open' at Error (native)
+                    return Promise.all([markPromise, /*reportPromise, */deletePromise])
                         .then(function (promises) {
                             console.log(promises);
                         })
