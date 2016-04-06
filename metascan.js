@@ -48,7 +48,7 @@ function Metascan(folder) {
                 sum && resolve(sum);
             });
         });
-    }
+    };
 
     var lookup_request = function (hash) {
         return new Promise(function (resolve, reject) {
@@ -63,7 +63,7 @@ function Metascan(folder) {
                 }
             };
             request(options, function (err, res, body) {
-                if (res.status > 400)
+                if (res && res.status > 400)
                     return reject(body);
                 resolve(JSON.parse(body));
             });

@@ -4,19 +4,26 @@ var Api = require('./api');
 var api = new Api();
 
 module.exports = function(filesPath, port) {
-
     var client;
-    var queueLimit = 100;
+    var queueLimit = 100; // MaxThreads * MaxRecursion + MaxQueue - MaxThreads + 6 < RLIMIT_NOFILE (ulimit -n); server value: 12 * 10 + 100 - 12 + 6 = 214 < 1024
     var itemsInQueue = 0;
+    var self = this;
     init(port);
+    setInterval(pull, 60 * 1000);
 
     this.scanDir = function(file) {
         if(queueLimit - itemsInQueue <= 0)
             return console.log('ClamDaemon: queue is full');
-        itemsInQueue += 1;
-        var pathToScan = filesPath + file.sharename + '/' + file.fileid;
-        var scanCMD = 'zSCAN ' + pathToScan + '\0';
-        client.write(scanCMD);
+        api.setFileState(file, 'checking')
+            .then(function(file) {
+                itemsInQueue += 1;
+                var pathToScan = filesPath + file.sharename + '/' + file.fileid;
+                var scanCMD = 'zSCAN ' + pathToScan + '\0';
+                client.write(scanCMD);
+            })
+            .catch(function(err) {
+                console.log('ClamDaemon error in scanDir: ', err);
+            });
     };
 
     function onData(out) {
@@ -25,7 +32,7 @@ module.exports = function(filesPath, port) {
         if(parsedResponses.length) {
             var updatePromises = [];
             parsedResponses.forEach(function(parsedResponse) {
-                updatePromises.push(updateFile(parsedResponse));
+                updatePromises.push(updateFileState(parsedResponse));
             });
             Promise.all(updatePromises)
                 .then(function(files) {
@@ -50,7 +57,7 @@ module.exports = function(filesPath, port) {
     function parseResponse(response, checkerFolder) {
         var parsedResponses = [];
         function singleParse(response) {
-            if((response.indexOf('COMMAND READ TIMED OUT') > -1 || response.indexOf('ERROR') > -1) && response.indexOf('OK') == -1 && response.indexOf('FOUND') == -1)
+            if((response.indexOf('COMMAND READ TIMED OUT') > -1 || response.indexOf('ERROR') > -1) && response.indexOf('lstat() failed: No such file or directory. ERROR') == -1 && response.indexOf('OK') == -1 && response.indexOf('FOUND') == -1)
                 return {};
             var sharename = {};
             sharename.startPos = response.indexOf(checkerFolder) + checkerFolder.length;
@@ -77,6 +84,8 @@ module.exports = function(filesPath, port) {
                 resultFile.state = 'checked';
             if(foundPos < okPos)
                 resultFile.state = 'malware';
+            if(!resultFile.state)
+                resultFile.state = 'clamd_error';
             parsedResponses.push(resultFile);
             if(response.indexOf(checkerFolder, fileid.endPos) > -1) {
                 var newResp = response.substring(response.indexOf(checkerFolder, fileid.endPos));
@@ -87,13 +96,14 @@ module.exports = function(filesPath, port) {
         return parsedResponses;
     }
 
-    function updateFile(file) {
+    function updateFileState(file) {
         return new Promise(function(resolve, reject) {
             api.setFileState(file, file.state)
                 .then(function(file) {
                     if(file.state == 'malware')
-                        return api.reportMalware(file)
+                        return api.reportMalwareFile(file)
                             .then(function(file) {
+                                console.log('clamDaemon says NO to ' + file.sharename);
                                 resolve(file);
                             })
                             .catch(function(err) {
@@ -108,10 +118,18 @@ module.exports = function(filesPath, port) {
     }
 
     function pull() {
+        if(!client)
+            return;
         var count = queueLimit - itemsInQueue;
-        api.pullFilesToCheck(count).then(function(files) {
-            itemsInQueue += files.length;
-        });
+        api.pullFilesToCheck(count)
+            .then(function(files) {
+                files.forEach(function(file) {
+                    self.scanDir(file);
+                });
+            })
+            .catch(function(err) {
+                console.log('clamDaemon pull error: ', err);
+            });
     }
 
     // connection

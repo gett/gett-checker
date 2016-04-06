@@ -5,6 +5,7 @@
 var _ = require('underscore');
 var request = require('request');
 var exec = require('child_process').exec;
+var fs = require('fs');
 var MongoClient = require('mongodb').MongoClient
     , assert = require('assert');
 
@@ -27,6 +28,8 @@ MongoClient.connect(url, function(err, db) {
 });
 
 function Api(){
+
+    // possible file states: received, ready, checking, checked, malware, clamd_error
 
     this.registerFile = function(file){
         return new Promise(function(resolve, reject){
@@ -66,6 +69,18 @@ function Api(){
         });
     };
 
+    this.pullFilesToCheck = function(limit) {
+        return new Promise(function(resolve, reject) {
+            File.find({state: 'ready'})
+                .limit(limit)
+                .toArray(function(err, files) {
+                    if(err)
+                        return reject(err);
+                    return resolve(files);
+                });
+        });
+    };
+
     this.markAsChecked = function(files){
         return new Promise(function(resolve, reject){
             if(!files.length)
@@ -78,7 +93,19 @@ function Api(){
         });
     };
 
-    this.reportMalware = function(malware){
+    this.reportMalwareFile = function(malware){
+        return new Promise(function(resolve, reject){
+            request.post({url: gett_api + '/violation/malware/report', formData: {malware: JSON.stringify([malware])}}, function(error, response, body) {
+                if(error)
+                    return reject(error);
+                resolve(malware);
+            });
+        }).catch(function(e){
+            console.log('reportMalwareFile error: ', e.stack);
+        });
+    };
+
+    this.reportMalwareFiles = function(malware){
         return new Promise(function(resolve, reject){
             if(!malware.length)
                 return resolve([]);
@@ -90,13 +117,24 @@ function Api(){
         });
     };
 
+    function deleteFolderRecursive(path) {
+        if(fs.existsSync(path)) {
+            fs.readdirSync(path).forEach(function(file) {
+                var curPath = path + "/" + file;
+                if(fs.lstatSync(curPath).isDirectory())
+                    deleteFolderRecursive(curPath);
+                else
+                    fs.unlinkSync(curPath);
+            });
+            fs.rmdirSync(path);
+        }
+    }
+
     this.cleanChecked = function(scanFolder, file) {
         return new Promise(function(resolve, reject) {
-            var dir = scanFolder + file.sharename;
-            exec('rm -rf ' + dir, function ( err, stdout, stderr ) {
-                stdout && resolve(stdout);
-                err && reject(stderr);
-            });
+            var dir = scanFolder + file.sharename + '/' + file.fileid;
+            deleteFolderRecursive(dir);
+            resolve(dir);
         });
     };
 

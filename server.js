@@ -4,7 +4,7 @@
 var express = require('express');
 var bodyParser = require('body-parser');
 var Api = require('./api');
-var Downloader = require('./donwloader');
+var Downloader = require('./downloader');
 var MetaScan = require('./metascan');
 var Checker = require('./clamChecker');
 var ClamDaemon = require('./clamDaemon');
@@ -19,9 +19,9 @@ else
 var app = express();
 var api = new Api();
 var checker = new Checker(temp_files);
-var donwloader = new Downloader(temp_files);
+var downloader = new Downloader(temp_files);
 var metascan = new MetaScan(temp_files);
-var clamDaemon = new ClamDaemon(temp_files, 10000);
+var clamDaemon = new ClamDaemon(temp_files, 12000);
 
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({extended: true}));
@@ -39,14 +39,14 @@ app.post('/file/register', function (req, res) {
     api.registerFile(req.body)
         .then(function (file) {
             res.status(201).send();
-            return donwloader.downloadFile(req.body);
+            return downloader.downloadFile(req.body);
         })
         .then(function (file) {
             console.log('Download has been finished.');
             return api.setFileState(file, 'ready')
         })
         .then(function (file) {//Meta scan
-            if (!donwloader.isArchive(file) && file.filename.indexOf('.exe') == -1 && file.filename.indexOf('.cmd') == -1)
+            if (!downloader.isArchive(file) && file.filename.indexOf('.exe') == -1 && file.filename.indexOf('.cmd') == -1)
                 return clamDaemon.scanDir(file);
             metascan.scanFile(file.sharename + '/' + file.fileid + '/' + encodeURIComponent(file.filename))
                 .then(function (infected) {
@@ -56,15 +56,14 @@ app.post('/file/register', function (req, res) {
                     }
                     console.log('Metachecker says NO to ' + file.sharename);
                     var markPromise = api.setFileState(file, 'malware');
-                    //var deletePromise = api.cleanChecked(temp_files, file); // TODO: causing 'Error: ENOENT, open' at Error (native)
-                    //var reportPromise = api.reportMalware([file]); // TODO: causing 'Error: Parse Error'
-                    //var deletePromise = checker.cleanChecked([file]); // TODO: causing 'Error: ENOENT, open' at Error (native)
-                    return Promise.all([markPromise, /*reportPromise, */deletePromise])
+                    var deletePromise = api.cleanChecked(temp_files, file);
+                    var reportPromise = api.reportMalwareFile(file);
+                    return Promise.all([markPromise, reportPromise, deletePromise])
                         .then(function (promises) {
-                            console.log(promises);
+                            //console.log(promises);
                         })
                         .catch(function (e) {
-                            console.log(e.stack);
+                            console.log('server.js: mark, report or delete error: ', e.stack);
                             throw e;
                         });
 
@@ -86,7 +85,7 @@ app.get('/check', function (req, res) {
     checker.run(files)
         .then(function (results) {
             var markPromise = api.markAsChecked(results.checked);
-            var reportPromise = api.reportMalware(results.malware);
+            var reportPromise = api.reportMalwareFiles(results.malware);
             var deletePromise = checker.cleanChecked(results.checked);
             return Promise.all([markPromise, reportPromise, deletePromise]);
         })
@@ -109,7 +108,7 @@ app.listen(8080, function () {
     checker.run(files)
         .then(function (results) {
             var markPromise = api.markAsChecked(results.checked);
-            var reportPromise = api.reportMalware(results.malware);
+            var reportPromise = api.reportMalwareFiles(results.malware);
             var deletePromise = checker.cleanChecked(results.checked);
             return Promise.all([markPromise, reportPromise, deletePromise]);
         })
