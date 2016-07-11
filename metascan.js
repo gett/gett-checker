@@ -65,7 +65,16 @@ function Metascan(folder) {
             request(options, function (err, res, body) {
                 if (res && res.status > 400)
                     return reject(body);
-                resolve(JSON.parse(body));
+                try {
+                    var result = JSON.parse(body);
+                }
+                catch (err) {
+                    console.error('Metascan: response parse error. Response: ', body);
+                    result = body;
+                }
+                finally {
+                    resolve(result);
+                }
             });
         });
     }
