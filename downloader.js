@@ -4,6 +4,7 @@
 
 var exec = require('child_process').exec;
 var fs = require('fs');
+var FRONTEND_HOST = 'http://ge.tt';
 
 var known_archives = [
     '.tar.gz', // should be before tar
@@ -31,6 +32,8 @@ function Downloader(folder) {
                 .replace(':path', filepath)
                 .replace(':filename', '/' + encodeURIComponent(file.filename))
                 .replace(':fileurl', file.downloadurl);
+
+            args += ' --referer ' + FRONTEND_HOST; // without this header we will get redirect to share page
 
             exec('curl ' + args, function (error, stderr, stdout) {
                 if (error !== null) {
