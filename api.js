@@ -133,7 +133,16 @@ function Api(){
     this.cleanChecked = function(scanFolder, file) {
         return new Promise(function(resolve, reject) {
             var dir = scanFolder + file.sharename + '/' + file.fileid;
-            deleteFolderRecursive(dir);
+            try {
+                deleteFolderRecursive(dir);
+            }
+            catch(e) {
+                // if 'deleteFolderRecursive' fail - we still must remove folder
+                exec('rm -rf ' + dir, function(error, stdout, stderr) {
+                    if(error)
+                        console.error('API->cleanChecked remove error: ', error, stderr);
+                });
+            }
             resolve(dir);
         });
     };

@@ -103,7 +103,7 @@ module.exports = function(filesPath, port) {
                     if(file.state == 'malware')
                         return api.reportMalwareFile(file)
                             .then(function(file) {
-                                console.log('clamDaemon says NO to ' + file.sharename);
+                                console.log('clamDaemon says NO to ' + (file && file.sharename));
                                 resolve(file);
                             })
                             .catch(function(err) {
