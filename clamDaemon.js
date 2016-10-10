@@ -101,15 +101,16 @@ module.exports = function(filesPath, port) {
             api.setFileState(file, file.state)
                 .then(function(file) {
                     if(file.state == 'malware')
-                        return api.reportMalwareFile(file)
+                        api.reportMalwareFile(file)
                             .then(function(file) {
-                                console.log('clamDaemon says NO to ' + (file && file.sharename));
+                                console.log('clamDaemon says NO to ' + (file && file.sharename) + '/' + (file && file.fileid));
                                 resolve(file);
                             })
                             .catch(function(err) {
                                 reject(err);
                             });
-                    resolve(file);
+                    else
+                        resolve(file);
                 })
                 .catch(function(err) {
                     reject(err);

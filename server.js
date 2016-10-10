@@ -8,6 +8,7 @@ var Downloader = require('./downloader');
 var MetaScan = require('./metascan');
 var Checker = require('./clamChecker');
 var ClamDaemon = require('./clamDaemon');
+var AVGScan = require('./AVGScan');
 var _ = require('underscore');
 
 var temp_files;
@@ -22,6 +23,7 @@ var checker = new Checker(temp_files);
 var downloader = new Downloader(temp_files);
 var metascan = new MetaScan(temp_files);
 var clamDaemon = new ClamDaemon(temp_files, 12000);
+var avgScan = new AVGScan(temp_files);
 
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({extended: true}));
@@ -42,19 +44,23 @@ app.post('/file/register', function (req, res) {
             return downloader.downloadFile(req.body);
         })
         .then(function (file) {
-            console.log('Download has been finished.');
+            console.log('Download has been finished. Sharename: ', file.sharename, '/', file.fileid);
             return api.setFileState(file, 'ready')
         })
-        .then(function (file) {//Meta scan
+        .then(function(file) {
+            return avgScan.scanDir(file);
+        })
+        .then(function (file) {
+            if(file && file.state == 'malware')
+                return;
             if (!downloader.isArchive(file) && file.filename.indexOf('.exe') == -1 && file.filename.indexOf('.cmd') == -1)
                 return clamDaemon.scanDir(file);
             metascan.scanFile(file.sharename + '/' + file.fileid + '/' + encodeURIComponent(file.filename))
                 .then(function (infected) {
                     if (!infected){
-                        console.log('Metachecker says YES to ' + file.sharename);
                         return clamDaemon.scanDir(file);
                     }
-                    console.log('Metachecker says NO to ' + file.sharename);
+                    console.log('Metachecker says NO to ' + (file && file.sharename) + '/' + (file && file.fileid));
                     var markPromise = api.setFileState(file, 'malware');
                     var deletePromise = api.cleanChecked(temp_files, file);
                     var reportPromise = api.reportMalwareFile(file);

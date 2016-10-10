@@ -38,7 +38,7 @@ function Api(){
                 if(err)
                     return reject(err);
                 if(files.length)
-                    return reject({message: 'File exists in the system already'});
+                    return reject({message: 'File exists in the system already ' + file.sharename + '/' + file.fileid});
                 File.insert(file, function(err, file){
                     err && reject(err);
                     file && resolve(file);
