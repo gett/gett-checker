@@ -29,7 +29,8 @@ MongoClient.connect(url, function(err, db) {
 
 function Api(){
 
-    // possible file states: received, ready, checking, checked, malware, clamd_error
+    // possible file states: received, ready, checking, checked, malware, clamd_error, rescanning, rescanning_error
+    // each file will have scannedAt field in seconds
 
     this.registerFile = function(file){
         return new Promise(function(resolve, reject){
@@ -49,7 +50,7 @@ function Api(){
 
     this.setFileState = function(file, state){
         return new Promise(function(resolve, reject){
-            File.updateOne({sharename: file.sharename, fileid: file.fileid}, {$set: { state: state }}, function(err, res){
+            File.updateOne({sharename: file.sharename, fileid: file.fileid}, {$set: { state: state, scannedAt: getTSInSeconds() }}, function(err, res){
                 if(err)
                     return reject(err);
                 file.state = state;
@@ -80,13 +81,27 @@ function Api(){
                 });
         });
     };
+    this.pullFileToRescan = function(olderThan) {
+        return new Promise(function(resolve, reject) {
+            // File.find({readystate: {$ne: 'malware'}, scannedAt: {$lte: olderThan}}) // uncomment after all documents will be rescanned
+            File.find({readystate: {$ne: 'malware'}, scannedAt: {$exists: false}})
+                .limit(1)
+                .toArray(function(err, files) {
+                    if(err)
+                        return reject(err);
+                    console.log(files);
+                    !files[0] && console.log('Rescanning: no more files without scannedAt field.');
+                    return resolve(files[0]);
+                });
+        });
+    };
 
     this.markAsChecked = function(files){
         return new Promise(function(resolve, reject){
             if(!files.length)
                 resolve([]);
             var files_id = _.pluck(files, '_id');
-            File.update({_id: {$in: files_id}}, {$set: {state: 'checked'}}, {multi: true}, function(err, files){
+            File.update({_id: {$in: files_id}}, {$set: {state: 'checked', scannedAt: getTSInSeconds()}}, {multi: true}, function(err, files){
                 err && reject(err);
                 files && resolve(files);
             });
@@ -146,6 +161,10 @@ function Api(){
             resolve(dir);
         });
     };
+
+    function getTSInSeconds() { // used for scannedAt field
+        return Math.floor(new Date().getTime() / 1000);
+    }
 
 }
 

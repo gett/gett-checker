@@ -37,7 +37,7 @@ function Downloader(folder) {
 
             exec('curl ' + args, function (error, stderr, stdout) {
                 if (error !== null) {
-                    return reject(error, stderr);
+                    return reject({error: error, stderr: stderr, file: file});
                 }
                 console.log('File ' + file.sharename + '/' + file.filename + ' has been downloaded.');
                 file.path = download_folder + file.filename;

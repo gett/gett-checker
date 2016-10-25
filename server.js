@@ -9,6 +9,7 @@ var MetaScan = require('./metascan');
 var Checker = require('./clamChecker');
 var ClamDaemon = require('./clamDaemon');
 var AVGScan = require('./AVGScan');
+var Rescanner = require('./rescanner');
 var _ = require('underscore');
 
 var temp_files;
@@ -24,6 +25,7 @@ var downloader = new Downloader(temp_files);
 var metascan = new MetaScan(temp_files);
 var clamDaemon = new ClamDaemon(temp_files, 12000);
 var avgScan = new AVGScan(temp_files);
+new Rescanner(temp_files, api, downloader, avgScan, clamDaemon, metascan);
 
 app.use(bodyParser.json()); // for parsing application/json
 app.use(bodyParser.urlencoded({extended: true}));

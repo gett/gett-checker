@@ -26,6 +26,10 @@ module.exports = function(filesPath, port) {
             });
     };
 
+    this.isWorking = function() {
+        return client ? true : false;
+    };
+
     function onData(out) {
         var parsedResponses = parseResponse(out, filesPath);
         itemsInQueue -= parsedResponses.length;
