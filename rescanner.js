@@ -1,21 +1,49 @@
-var LOOKUP_LIMIT_PER_HOUR = 5; // how many files we will scan per hour, metascan hash lookup limit per hour = 1500
+var LOOKUP_LIMIT_PER_HOUR = 1000; // how many files we will scan per hour, metascan hash lookup limit per hour = 1500
 var SCAN_OLDER_THAN = 15 * 24 * 60 * 60; // 15 days (in seconds)
 
 module.exports = function(filesPath, api, downloader, avgScan, clamDaemon, metascan) {
 
     var currentLookupCounter = 0;
+    var totalScansCounter = 0;
     var inProgress = false;
+    var rescanIntervalHolder = null;
 
-    setInterval(resetCounter, 60 * 1000); // check counter each minute
+    setInterval(manageRescanner, 60 * 1000);
 
-    setInterval(function() {
-        if(currentLookupCounter < LOOKUP_LIMIT_PER_HOUR && !inProgress) // try to scan new file
-            rescanFile();
-    }, 1000);
+    function setRescanInterval() {
+        if(rescanIntervalHolder)
+            return;
+        console.log('Setting new rescan');
+        rescanIntervalHolder = setInterval(function() {
+            if(!inProgress && currentLookupCounter < LOOKUP_LIMIT_PER_HOUR) // try to scan new file
+                rescanFile();
+        }, 1000);
+    }
 
-    function resetCounter() {
-        if(new Date().getMinutes() == 0) // reset counter each hour
-            currentLookupCounter = 0;
+    function manageRescanner() {
+        showStats();
+        if(!rescanIntervalHolder && currentLookupCounter < LOOKUP_LIMIT_PER_HOUR)
+            setRescanInterval();
+        if(rescanIntervalHolder && currentLookupCounter == LOOKUP_LIMIT_PER_HOUR) {
+            clearInterval(rescanIntervalHolder);
+            rescanIntervalHolder = null;
+            console.log('Reached LOOKUP_LIMIT_PER_HOUR, rescanner stopped');
+        }
+        if(new Date().getMinutes() == 0) {
+            console.log('currentLookupCounter cleared');
+            currentLookupCounter = 0; // reset counter each hour
+        }
+    }
+
+    function showStats() {
+        var date = new Date();
+        console.log(
+            'Rescanner statistic|',
+            date.getDate(), '/', date.getMonth(), '/', date.getFullYear(), '-',
+            date.getHours(), ':', date.getMinutes(), ':', date.getSeconds(), '|',
+            'Total scans (since last restart):', totalScansCounter,
+            '; current hourly metascans:', currentLookupCounter, '/', LOOKUP_LIMIT_PER_HOUR
+        );
     }
 
     function getTSInSeconds() {
@@ -26,6 +54,7 @@ module.exports = function(filesPath, api, downloader, avgScan, clamDaemon, metas
         if(clamDaemon.isWorking())
             return new Promise(function(resolve, reject) {
                 inProgress = true;
+                totalScansCounter++;
                 // api.pullFileToRescan(getTSInSeconds() - SCAN_OLDER_THAN) // uncomment after all documents will be rescanned
                 api.pullFileToRescan()
                     .then(function(pulledFile) { // pulledFile to handle errors while file for processing

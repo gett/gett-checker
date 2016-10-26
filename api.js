@@ -89,7 +89,6 @@ function Api(){
                 .toArray(function(err, files) {
                     if(err)
                         return reject(err);
-                    console.log(files);
                     !files[0] && console.log('Rescanning: no more files without scannedAt field.');
                     return resolve(files[0]);
                 });
