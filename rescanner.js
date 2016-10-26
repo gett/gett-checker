@@ -91,6 +91,8 @@ module.exports = function(filesPath, api, downloader, avgScan, clamDaemon, metas
                                             resolve();
                                             return;
                                         }
+                                        api.setFileState(file, 'malware');
+                                        api.reportMalwareFile(file);
                                         api.cleanChecked(filesPath, file);
                                         resolve();
                                     })
