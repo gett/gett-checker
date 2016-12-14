@@ -32,6 +32,9 @@ module.exports = function(filesPath, api, downloader, avgScan, clamDaemon, metas
         if(new Date().getMinutes() == 0) {
             console.log('currentLookupCounter cleared');
             currentLookupCounter = 0; // reset counter each hour
+            inProgress = false;
+            clearInterval(rescanIntervalHolder);
+            rescanIntervalHolder = null;
         }
     }
 
