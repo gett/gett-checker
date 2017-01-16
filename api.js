@@ -84,7 +84,7 @@ function Api(){
     this.pullFileToRescan = function(olderThan) {
         return new Promise(function(resolve, reject) {
             File.find(
-                    {readystate: {$ne: 'malware'},
+                    {state: {$ne: 'malware'},
                     $or: [
                         {scannedAt: {$lte: olderThan}},
                         {state: 'rescanning_error'},
