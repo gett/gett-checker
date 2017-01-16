@@ -21,7 +21,7 @@ module.exports = function(filesPath, api, downloader, avgScan, clamDaemon, metas
     }
 
     function manageRescanner() {
-        showStats();
+        var currentMinute = new Date().getMinutes();
         if(!rescanIntervalHolder && currentLookupCounter < LOOKUP_LIMIT_PER_HOUR)
             setRescanInterval();
         if(rescanIntervalHolder && currentLookupCounter == LOOKUP_LIMIT_PER_HOUR) {
@@ -29,13 +29,14 @@ module.exports = function(filesPath, api, downloader, avgScan, clamDaemon, metas
             rescanIntervalHolder = null;
             console.log('Reached LOOKUP_LIMIT_PER_HOUR, rescanner stopped');
         }
-        if(new Date().getMinutes() == 0) {
+        if(currentMinute == 0) {
             console.log('currentLookupCounter cleared');
             currentLookupCounter = 0; // reset counter each hour
             inProgress = false;
             clearInterval(rescanIntervalHolder);
             rescanIntervalHolder = null;
         }
+        (currentMinute % 10 == 0) && showStats(); // show stats every ten minutes
     }
 
     function showStats() {

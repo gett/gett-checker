@@ -87,7 +87,8 @@ function Api(){
                     {readystate: {$ne: 'malware'},
                     $or: [
                         {scannedAt: {$lte: olderThan}},
-                        {state: 'rescanning_error'}
+                        {state: 'rescanning_error'},
+                        {state: 'clamd_error'}
                     ]
                 })
                 .limit(1)
