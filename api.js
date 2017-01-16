@@ -83,13 +83,18 @@ function Api(){
     };
     this.pullFileToRescan = function(olderThan) {
         return new Promise(function(resolve, reject) {
-            // File.find({readystate: {$ne: 'malware'}, scannedAt: {$lte: olderThan}}) // uncomment after all documents will be rescanned
-            File.find({readystate: {$ne: 'malware'}, scannedAt: {$exists: false}})
+            File.find(
+                    {readystate: {$ne: 'malware'},
+                    $or: [
+                        {scannedAt: {$lte: olderThan}},
+                        {state: 'rescanning_error'}
+                    ]
+                })
                 .limit(1)
                 .toArray(function(err, files) {
                     if(err)
                         return reject(err);
-                    !files[0] && console.log('Rescanning: no more files without scannedAt field.');
+                    !files[0] && console.log('Rescanning: no more files to rescan.');
                     return resolve(files[0]);
                 });
         });

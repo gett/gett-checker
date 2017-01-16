@@ -58,8 +58,7 @@ module.exports = function(filesPath, api, downloader, avgScan, clamDaemon, metas
             return new Promise(function(resolve, reject) {
                 inProgress = true;
                 totalScansCounter++;
-                // api.pullFileToRescan(getTSInSeconds() - SCAN_OLDER_THAN) // uncomment after all documents will be rescanned
-                api.pullFileToRescan()
+                api.pullFileToRescan(getTSInSeconds() - SCAN_OLDER_THAN)
                     .then(function(pulledFile) { // pulledFile to handle errors while file for processing
                         if(!pulledFile) {
                             inProgress = false;
